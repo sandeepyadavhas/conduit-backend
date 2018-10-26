@@ -1,0 +1,21 @@
+{
+  "name": "conduit-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "models.js",
+  "dependencies": {
+    "express": "^4.16.4",
+    "jsonwebtoken": "^8.3.0",
+    "nodemon": "^1.18.4",
+    "sequelize": "^4.41.0",
+    "sqlite3": "^4.0.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
