@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
+const { jwtConfig } = require('../config');
 
 const generateJwtToken = async function(username) {
-	return jwt.sign({username: username}, "Chat deni maar deli khich ke tamacha, Hihi hihi hans delen Rinkiya ke papa");
+	return jwt.sign({username: username}, jwtConfig.privateKey);
 }
 
 module.exports = generateJwtToken;

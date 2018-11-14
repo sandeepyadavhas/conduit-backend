@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+const { dbConfig } = require('./config');
 
 const credentials = require('./schemas/credentials');
 const users = require('./schemas/users');
@@ -6,9 +7,9 @@ const tags = require('./schemas/tags');
 const articles = require('./schemas/articles');
 
 const db = new Sequelize({
-	dialect: 'sqlite',
-	storage: __dirname + '/store.db'
-	,logging: false
+	dialect: dbConfig.squelizeDialect
+	, storage: (dbConfig.storageAbsolutePath)? (dbConfig.storageAbsolutePath):(__dirname + dbConfig.storageRelativePath)
+	, logging: dbConfig.logging
 });
 
 const User = db.define('users', users);

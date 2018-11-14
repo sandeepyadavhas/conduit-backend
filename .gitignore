@@ -1,0 +1,4 @@
+/node_modules
+.vscode
+/store.db
+.env

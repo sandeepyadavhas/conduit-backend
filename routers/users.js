@@ -1,12 +1,16 @@
 const { Router } = require('express');
 const { User, Credentials } = require('../models');
 const jwtGen = require('../utils/jwt-gen');
-const validateSignUp = require('../utils/validate-sign-up');
+const validateReq = require('../utils/validateReq');
 
 const router = Router();
 
 router.post('/login', async(req, res) => {
-	let user = await User.findOne({
+	let errors = validateReq('login', req.body);
+	if (errors) {
+		return res.status(422).json({errors});
+	}
+	const user = await User.findOne({
 		where: {
 			email: req.body.user.email
 		}
@@ -14,23 +18,16 @@ router.post('/login', async(req, res) => {
 	if (user) {
 		const cred = await user.getCredential();
 		if (cred.password == req.body.user.password) {
-			return res.status(200).json({
-				user
-			});
+			return res.status(200).json({user});
 		}
 	}
-	return res.status(422).json(
-		{
-			"email or password" : ["is invalid"]
-		}
-	);
+	return res.status(422).json({errors: prepareRes("wrong-credentials")});
 });
 
 
 router.post('/', async (req, res) => {
-
-	const errors = validateSignUp(req.body);
-	if (Object.keys(errors).length != 0) {
+	const errors = validateReq('signup', req.body);
+	if (errors) {
 		return res.status(422).json({
 			errors: errors
 		});
@@ -48,22 +45,10 @@ router.post('/', async (req, res) => {
 		await newUser.createCredential({
 			password: user.password,
 		});
-
-		return res.status(201).json(
-			{
-				message: 'User Added',
-				user: newUser
-			}
-		);
+		return res.status(201).json({user: newUser});
 	}
 	catch(err) {
-		return res.status(422).json(
-			{
-				errors: {
-					message: err.errors[0].message
-				}
-			}
-		);
+		return res.status(422).json({errors: {message: err.errors[0].message}});
 	}
 });
 
