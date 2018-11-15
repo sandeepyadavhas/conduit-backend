@@ -17,20 +17,32 @@ const Credentials = db.define('credentials', credentials);
 const Tags = db.define('tags', tags);
 const Article = db.define('articles', articles);
 
+const ArticleTags = db.define('article_tags', {});
+const Likes = db.define('likes', {});
+const FollowerFollowee = db.define('follower_followee', {});
 
 User.hasOne(Credentials);
-Credentials.belongsTo(User);
 
-Article.hasMany(Tags);
+Credentials.belongsTo(User);
 Article.belongsTo(User);
 
+Article.belongsToMany(Tags, { through: ArticleTags});
+Tags.belongsToMany(Article, { through: ArticleTags});
+
 User.hasMany(Article);
-Tags.belongsTo(Article);
+
+User.belongsToMany(Article, { through: Likes, as: 'Likes'});
+Article.belongsToMany(User, { through: Likes, as: 'Likes'});
+
+User.belongsToMany(User, { through: FollowerFollowee, as: 'follower', foreignKey: 'followeeId'});
+User.belongsToMany(User, { through: FollowerFollowee, as: 'followee', foreignKey: 'followerId'});
 
 module.exports = {
-	db,
-	User,
-	Article,
-	Tags,
-	Credentials
+	db
+	, User
+	, Article
+	, Tags
+	, Credentials
+	, ArticleTags
+	, Likes
 };

@@ -8,9 +8,11 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Routes
-app.use('/users', require('./routers/users'));
-app.use('/user', require('./routers/user'));
-app.use('/tags', require('./routers/tags'));
+app.use('/users', require('./routers/api/users'));
+app.use('/user', require('./routers/api/user'));
+app.use('/tags', require('./routers/api/tags'));
+app.use('/articles', require('./routers/api/articles'));
+app.use('/profiles', require('./routers/api/profiles'));
 
 (async function() {
 	try {

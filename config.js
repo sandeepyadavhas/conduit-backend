@@ -1,4 +1,3 @@
-// DB Config
 let dbConfig = new (function() {
 	this.squelizeDialect = 'sqlite';
 	// dbConfig.storageAbsolutePath = 'C:/Users/sandeepyadav/Documents/Node Projects/JS Evaluation/conduit-backend/store.db';
@@ -6,7 +5,6 @@ let dbConfig = new (function() {
 	this.logging = false;
 })();
 
-// App Config
 let appConfig = new (function() {
 	this.port = 3939;
 })();

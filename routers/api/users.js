@@ -1,7 +1,7 @@
 const { Router } = require('express');
-const { User, Credentials } = require('../models');
-const jwtGen = require('../utils/jwt-gen');
-const validateReq = require('../utils/validateReq');
+const { User } = require('../../models');
+const jwtGen = require('../../utils/jwt-gen');
+const validateReq = require('../../utils/validateReq');
 
 const router = Router();
 
