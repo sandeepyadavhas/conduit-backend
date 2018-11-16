@@ -29,6 +29,7 @@ Article.belongsTo(User);
 Article.belongsToMany(Tags, { through: ArticleTags});
 Tags.belongsToMany(Article, { through: ArticleTags});
 
+Article.belongsTo(User);
 User.hasMany(Article);
 
 User.belongsToMany(Article, { through: Likes, as: 'Likes'});

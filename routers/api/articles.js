@@ -5,7 +5,8 @@ const slug = require('slug');
 const randomstring = require("randomstring");
 const { Tags, Article, Likes } = require('../../models');
 const validateToken = require('../auth');
-
+const getArticle = require('../../dto/article');
+const getProfile = require('../../dto/profile');
 
 const router = Router();
 
@@ -29,6 +30,26 @@ router.delete('/:slug/favorite', validateToken.required, async (req, res) => {
 	return res.status((result==1)?201:200).json({article});
 });
 
+router.get('/:slug', validateToken.optional, async (req, res) => {
+	let article = await Article.findOne({
+		where: {
+			slug: req.params.slug
+		}
+	});
+	let author = await article.getUser();
+
+
+
+	let following = false, favorited = false;
+	if (req.User) {
+		following = await author.hasFollower(req.User);
+		favorited = await article.hasLike(req.User);
+	}
+	let tagList = (await article.getTags()).map(tag => tag.tagName);
+	let favoritesCount = await article.countLikes();
+	return res.status(200).json({article: getArticle(article, getProfile(author, following), tagList, favorited, favoritesCount)});
+});
+
 router.post('/', validateToken.required, async (req, res) => {
 	let errors = validateReq("add-article", req.body);
 	if (errors) {
@@ -45,11 +66,8 @@ router.post('/', validateToken.required, async (req, res) => {
 	if (newArticle && article.tagList) {
 		let addTagPromises = [];
 		for (let i = 0;i<article.tagList.length; ++i) {
-			addTagPromises.push(
-				setTag(newArticle, article.tagList[i])
-			);
+			await setTag(newArticle, article.tagList[i]);
 		}
-		await Promise.all(addTagPromises);
 	}
 	return res.status(201).json({article: newArticle});
 });
