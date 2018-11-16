@@ -88,16 +88,11 @@ router.get('/', validateToken.optional, async (req, res) => {
 				model: Tags,
 				where: tagFilter
 			},
-			{
-				model: Likes,
-				include: [
-					{
-						model: User,
-						where: favFilter
-					}
-				]
-			}
+			// {
+
+			// }
 		],
+		distinct: true,
 		offset: (req.query.offset)? req.query.offset : 0,
 		limit: (req.query.limit)? req.query.limit : 10,
 		order: [['updatedAt', 'DESC']]
