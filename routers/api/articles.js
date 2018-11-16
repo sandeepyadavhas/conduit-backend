@@ -10,13 +10,23 @@ const validateToken = require('../auth');
 const router = Router();
 
 router.post('/:slug/favorite', validateToken.required, async (req, res) => {
-	let article = await setUnsetLike(req.User, req.params.slug, true);
-	return res.status(201).json({article});
+	let article = await Article.findOne({
+		where: {
+			slug: req.params.slug
+		}
+	});
+	let result = await article.addLike(req.User);
+	return res.status((result.length==1)?201:200).json({article});
 });
 
 router.delete('/:slug/favorite', validateToken.required, async (req, res) => {
-	let article = await setUnsetLike(req.User, req.params.slug, false);
-	return res.status(201).json({article});
+	let article = await Article.findOne({
+		where: {
+			slug: req.params.slug
+		}
+	});
+	let result = await article.removeLike(req.User);
+	return res.status((result==1)?201:200).json({article});
 });
 
 router.post('/', validateToken.required, async (req, res) => {
@@ -33,30 +43,24 @@ router.post('/', validateToken.required, async (req, res) => {
 		body: article.body
 	});
 	if (newArticle && article.tagList) {
+		let addTagPromises = [];
 		for (let i = 0;i<article.tagList.length; ++i) {
-			let tag = await Tags.findOrCreate({
-				where: {
-					tagName: article.tagList[i]
-				}
-			});
-			await newArticle.addTag(tag[0]);
+			addTagPromises.push(
+				setTag(newArticle, article.tagList[i])
+			);
 		}
+		await Promise.all(addTagPromises);
 	}
 	return res.status(201).json({article: newArticle});
 });
 
 module.exports = router;
 
-async function setUnsetLike(User, slug, like) {
-	let article = await Article.findOne({
+async function setTag(newArticle, tagName) {
+	let tag = await Tags.findOrCreate({
 		where: {
-			slug: slug
+			tagName: tagName
 		}
 	});
-	if (like) {
-		await article.addLike(User);
-	} else {
-		await article.removeLike(User);
-	}
-	return article;
+	await newArticle.addTag(tag[0]);
 }
