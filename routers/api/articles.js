@@ -89,7 +89,9 @@ router.get('/', validateToken.optional, async (req, res) => {
 				where: tagFilter
 			},
 			// {
-
+			// 	model: User,
+			// 	as: 'Likes',
+			// 	where: favFilter
 			// }
 		],
 		distinct: true,
