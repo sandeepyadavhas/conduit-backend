@@ -17,7 +17,7 @@ router.post('/:slug/favorite', validateToken.required, async (req, res) => {
 		}
 	});
 	let result = await article.addLike(req.User);
-	return res.status((result.length==1)?201:200).json({article});
+	return res.status((result.length==1)?201:200).json({article: processArticle(req.User, article)});
 });
 
 router.delete('/:slug/favorite', validateToken.required, async (req, res) => {
@@ -27,7 +27,7 @@ router.delete('/:slug/favorite', validateToken.required, async (req, res) => {
 		}
 	});
 	let result = await article.removeLike(req.User);
-	return res.status((result==1)?201:200).json({article});
+	return res.status((result==1)?201:200).json({article: processArticle(req.User, article)});
 });
 
 router.get('/:slug', validateToken.optional, async (req, res) => {
@@ -36,18 +36,7 @@ router.get('/:slug', validateToken.optional, async (req, res) => {
 			slug: req.params.slug
 		}
 	});
-	let author = await article.getUser();
-
-
-
-	let following = false, favorited = false;
-	if (req.User) {
-		following = await author.hasFollower(req.User);
-		favorited = await article.hasLike(req.User);
-	}
-	let tagList = (await article.getTags()).map(tag => tag.tagName);
-	let favoritesCount = await article.countLikes();
-	return res.status(200).json({article: getArticle(article, getProfile(author, following), tagList, favorited, favoritesCount)});
+	return res.status(200).json({article: processArticle(req.User, article)});
 });
 
 router.post('/', validateToken.required, async (req, res) => {
@@ -69,7 +58,7 @@ router.post('/', validateToken.required, async (req, res) => {
 			await setTag(newArticle, article.tagList[i]);
 		}
 	}
-	return res.status(201).json({article: newArticle});
+	return res.status(201).json({article: processArticle(req.User, article, req.User)});
 });
 
 module.exports = router;
@@ -81,4 +70,17 @@ async function setTag(newArticle, tagName) {
 		}
 	});
 	await newArticle.addTag(tag[0]);
+}
+
+async function processArticle(currUser, article, authorOptional) {
+	// author is optional, if provided it is used else it is extracted from article
+	let following = false, favorited = false;
+	let author = (authorOptional)? authorOptional: await article.getUser();
+	if (currUser) {
+		following = await author.hasFollower(currUser);
+		favorited = await article.hasLike(currUser);
+	}
+	let tagList = (await article.getTags()).map(tag => tag.tagName);
+	let favoritesCount = await article.countLikes();
+	return getArticle(article, getProfile(author, following), tagList, favorited, favoritesCount);
 }
