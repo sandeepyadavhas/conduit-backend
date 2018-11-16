@@ -3,7 +3,7 @@ const { Router } = require('express');
 const validateReq = require('../../utils/validateReq');
 const slug = require('slug');
 const randomstring = require("randomstring");
-const { Tags, Article, Likes } = require('../../models');
+const { Tags, Article, Likes, User } = require('../../models');
 const validateToken = require('../auth');
 const getArticle = require('../../dto/article');
 const getProfile = require('../../dto/profile');
@@ -17,7 +17,7 @@ router.post('/:slug/favorite', validateToken.required, async (req, res) => {
 		}
 	});
 	let result = await article.addLike(req.User);
-	return res.status((result.length==1)?201:200).json({article: processArticle(req.User, article)});
+	return res.status((result.length==1)?201:200).json({article: await processArticle(req.User, article)});
 });
 
 router.delete('/:slug/favorite', validateToken.required, async (req, res) => {
@@ -27,7 +27,7 @@ router.delete('/:slug/favorite', validateToken.required, async (req, res) => {
 		}
 	});
 	let result = await article.removeLike(req.User);
-	return res.status((result==1)?201:200).json({article: processArticle(req.User, article)});
+	return res.status((result==1)?201:200).json({article: await processArticle(req.User, article)});
 });
 
 router.get('/:slug', validateToken.optional, async (req, res) => {
@@ -36,7 +36,7 @@ router.get('/:slug', validateToken.optional, async (req, res) => {
 			slug: req.params.slug
 		}
 	});
-	return res.status(200).json({article: processArticle(req.User, article)});
+	return res.status(200).json({article: await processArticle(req.User, article)});
 });
 
 router.post('/', validateToken.required, async (req, res) => {
@@ -58,7 +58,51 @@ router.post('/', validateToken.required, async (req, res) => {
 			await setTag(newArticle, article.tagList[i]);
 		}
 	}
-	return res.status(201).json({article: processArticle(req.User, article, req.User)});
+	return res.status(201).json({article: await processArticle(req.User, newArticle, req.User)});
+});
+
+router.get('/', validateToken.optional, async (req, res) => {
+	let authorFilter = {}, tagFilter ={}, favFilter ={};
+	if (req.query.author) {
+		authorFilter = {
+			username: req.query.author
+		}
+	}
+	if(req.query.tag){
+		tagFilter = {
+			tagName: req.query.tag
+		}
+	}
+	if(req.query.favorited){
+		favFilter = {
+			username: req.query.favorited
+		}
+	}
+	let result = await Article.findAndCountAll({
+		include:[
+			{
+				model: User,
+				where: authorFilter
+			},
+			{
+				model: Tags,
+				where: tagFilter
+			},
+			{
+				model: Likes,
+				include: [
+					{
+						model: User,
+						where: favFilter
+					}
+				]
+			}
+		],
+		offset: (req.query.offset)? req.query.offset : 0,
+		limit: (req.query.limit)? req.query.limit : 10,
+		order: [['updatedAt', 'DESC']]
+	});
+	return res.status(200).json({articles: result.rows, count: result.count});
 });
 
 module.exports = router;
