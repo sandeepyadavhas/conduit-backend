@@ -2,6 +2,7 @@ const { Router } = require('express');
 const { User } = require('../../models');
 const jwtGen = require('../../utils/jwt-gen');
 const validateReq = require('../../utils/validateReq');
+const validateToken = require('../auth');
 
 const router = Router();
 
@@ -52,4 +53,39 @@ router.post('/', async (req, res) => {
 	}
 });
 
+
+router.put('/', validateToken.required, async (req, res) => {
+	const errors = validateReq('update-user', req.body);
+	if (errors) {
+		return res.status(422).json({
+			errors: errors
+		});
+	}
+
+	try {
+		let newUser = generateUser(req.body.user, req.User);
+		newUser = await newUser.save();
+		if (req.body.user.password) {
+			let cred = await newUser.getCredential();
+			cred.password = req.body.user.password;
+			cred = await cred.save();
+		}
+		return res.status(201).json({user: newUser});
+	}
+	catch(err) {
+		return res.status(422).json({errors: {message: err.errors[0].message}});
+	}
+});
+
 module.exports = router;
+
+function generateUser(userBody, userModel) {
+	let fields = ['username', 'email', 'image', 'token', 'bio'];
+	for (let i = 0;i<fields.length;++i) {
+		let field = fields[i];
+		if (userBody[field]) {
+			userModel[field] = userBody[field];
+		}
+	}
+	return userModel;
+}
