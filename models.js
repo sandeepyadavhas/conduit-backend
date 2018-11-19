@@ -54,4 +54,5 @@ module.exports = {
 	, Credentials
 	, ArticleTags
 	, Likes
+	, FollowerFollowee
 };

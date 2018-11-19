@@ -3,10 +3,11 @@ const { Router } = require('express');
 const validateReq = require('../../utils/validateReq');
 const slug = require('slug');
 const randomstring = require("randomstring");
-const { Tags, Article, Likes, User } = require('../../models');
+const { Tags, Article, Likes, User, FollowerFollowee } = require('../../models');
 const validateToken = require('../auth');
 const getArticle = require('../../dto/article');
 const getProfile = require('../../dto/profile');
+var util = require('util');
 
 const router = Router();
 
@@ -29,6 +30,40 @@ router.delete('/:slug/favorite', validateToken.required, async (req, res) => {
 	let result = await article.removeLike(req.User);
 	return res.status((result==1)?201:200).json({article: await processArticle(req.User, article)});
 });
+
+
+router.get('/feed', validateToken.required, async (req, res) => {
+	let followers = await FollowerFollowee.findAll({
+		where: {
+			followerId: req.User.id
+		},
+		attributes: ['followeeId']
+	});
+	followers = followers.map(follower => follower.followeeId);
+
+	let result = await Article.findAndCountAll({
+		include: [
+			{
+				model: User,
+				where: {
+					id: followers
+				}
+			}
+		],
+		distinct: true,
+		offset: (req.query.offset)? req.query.offset : 0,
+		limit: (req.query.limit)? req.query.limit : 10,
+		order: [['updatedAt', 'DESC']]
+	});
+	let articles = [];
+	for (let i=0;i<result.rows.length;++i) {
+		articles.push(
+			await processArticle(req.User, result.rows[i])
+		);
+	}
+	return res.status(200).json({articles: articles, articlesCount: result.count});
+});
+
 
 router.get('/:slug', validateToken.optional, async (req, res) => {
 	let article = await Article.findOne({
@@ -79,7 +114,6 @@ router.get('/', validateToken.optional, async (req, res) => {
 			await processArticle(req.User, result.rows[i])
 		);
 	}
-	//  = await result.rows.map(async article => { return await processArticle(req.User, article)});
 	return res.status(200).json({articles: articles, articlesCount: result.count});
 });
 
@@ -127,7 +161,6 @@ router.get('/:slug/comments', validateToken.optional, async (req, res) => {
 	}
 	return res.status(200).json({comments});
 });
-
 
 module.exports = router;
 
